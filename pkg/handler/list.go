@@ -78,7 +78,7 @@ func (h *Handler) deleteList(ctx *gin.Context) {
 		return
 	}
 
-	listId, err := strconv.Atoi(ctx.Param("listId"))
+	listId, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
