@@ -2,22 +2,21 @@ package handler
 
 import "github.com/gin-gonic/gin"
 
-func (h *Handler) createList(c *gin.Context) {
+func (h *Handler) createList(ctx *gin.Context) {
+}
+
+func (h *Handler) getAllLists(ctx *gin.Context) {
 
 }
 
-func (h *Handler) getAllLists(c *gin.Context) {
+func (h *Handler) getListById(ctx *gin.Context) {
 
 }
 
-func (h *Handler) getListById(c *gin.Context) {
+func (h *Handler) updateList(ctx *gin.Context) {
 
 }
 
-func (h *Handler) updateList(c *gin.Context) {
-
-}
-
-func (h *Handler) deleteList(c *gin.Context) {
+func (h *Handler) deleteList(ctx *gin.Context) {
 
 }
