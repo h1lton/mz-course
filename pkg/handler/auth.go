@@ -5,7 +5,7 @@ import (
 	todo "github.com/h1lton/mz-course"
 )
 
-func (h Handler) signUp(ctx *gin.Context) {
+func (h *Handler) signUp(ctx *gin.Context) {
 	var input todo.User
 
 	if err := ctx.BindJSON(&input); err != nil {
@@ -29,7 +29,7 @@ type signInInput struct {
 	Password string `json:"password" binding:"required"`
 }
 
-func (h Handler) signIn(ctx *gin.Context) {
+func (h *Handler) signIn(ctx *gin.Context) {
 	var input signInInput
 
 	if err := ctx.BindJSON(&input); err != nil {
