@@ -53,13 +53,13 @@ func (h *Handler) getListById(ctx *gin.Context) {
 		return
 	}
 
-	id, err := strconv.Atoi(ctx.Param("id"))
+	listId, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	list, err := h.services.TodoList.GetById(userId, id)
+	list, err := h.services.TodoList.GetById(userId, listId)
 	if err != nil {
 		NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -73,5 +73,22 @@ func (h *Handler) updateList(ctx *gin.Context) {
 }
 
 func (h *Handler) deleteList(ctx *gin.Context) {
+	userId, err := getUserId(ctx)
+	if err != nil {
+		return
+	}
 
+	listId, err := strconv.Atoi(ctx.Param("listId"))
+	if err != nil {
+		NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	err = h.services.TodoList.Delete(userId, listId)
+	if err != nil {
+		NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	ctx.JSON(http.StatusOK, statusResponse{"ok"})
 }
