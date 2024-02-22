@@ -1,2 +1,2 @@
 addr: ":8000"
-debug: true
+debug: false
