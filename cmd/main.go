@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	todo "github.com/h1lton/mz-course"
 	"github.com/h1lton/mz-course/pkg/handler"
 	"github.com/h1lton/mz-course/pkg/repository"
@@ -11,6 +12,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
@@ -47,9 +50,27 @@ func main() {
 	handlers := handler.NewHandler(services)
 
 	srv := new(todo.Server)
-	println(viper.GetString("port"))
-	if err := srv.Run(viper.GetString("addr"), handlers.InitRoutes()); err != nil {
-		logrus.Fatalf("error occurred while running http server: %s", err.Error())
+
+	go func() {
+		if err := srv.Run(viper.GetString("addr"), handlers.InitRoutes()); err != nil {
+			logrus.Fatalf("error occurred while running http server: %s", err.Error())
+		}
+	}()
+
+	logrus.Info("Server started")
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
+	<-quit
+
+	logrus.Print("TodoApp Shutting Down")
+
+	if err := srv.Shutdown(context.Background()); err != nil {
+		logrus.Errorf("error occured on server shutting down: %s", err.Error())
+	}
+
+	if err := db.Close(); err != nil {
+		logrus.Errorf("error occured on db connection close: %s", err.Error())
 	}
 }
 
