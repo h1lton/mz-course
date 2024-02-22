@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	todo "github.com/h1lton/mz-course"
+	"errors"
 	"github.com/h1lton/mz-course/pkg/handler"
 	"github.com/h1lton/mz-course/pkg/repository"
 	"github.com/h1lton/mz-course/pkg/service"
@@ -11,12 +11,18 @@ import (
 	"github.com/mattn/go-colorable"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 func main() {
+	// Create context that listens for the interrupt signal from the OS.
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
 	logrus.SetFormatter(&logrus.TextFormatter{ForceColors: true})
 	logrus.SetOutput(colorable.NewColorableStdout())
 
@@ -49,27 +55,40 @@ func main() {
 	services := service.NewService(repos)
 	handlers := handler.NewHandler(services)
 
-	srv := new(todo.Server)
+	srv := &http.Server{
+		Addr:           viper.GetString("addr"),
+		Handler:        handlers.InitRoutes(),
+		MaxHeaderBytes: 1 << 20, // 1 MB
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+	}
 
+	// Initializing the server in a goroutine so that
+	// it won't block the graceful shutdown handling below
 	go func() {
-		if err := srv.Run(viper.GetString("addr"), handlers.InitRoutes()); err != nil {
-			logrus.Fatalf("error occurred while running http server: %s", err.Error())
+		if err = srv.ListenAndServe(); err != nil && !errors.Is(http.ErrServerClosed, err) {
+			logrus.Fatalf("listen: %s\n", err)
 		}
 	}()
 
-	logrus.Info("Server started")
+	// Listen for the interrupt signal.
+	<-ctx.Done()
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
-	<-quit
+	// Restore default behavior on the interrupt signal and notify user of shutdown.
+	stop()
+	logrus.Info("shutting down gracefully, press Ctrl+C again to force")
 
-	logrus.Print("TodoApp Shutting Down")
-
-	if err := srv.Shutdown(context.Background()); err != nil {
-		logrus.Errorf("error occured on server shutting down: %s", err.Error())
+	// The context is used to inform the server it has 5 seconds to finish
+	// the request it is currently handling
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err = srv.Shutdown(ctx); err != nil {
+		logrus.Fatal("Server forced to shutdown: ", err)
 	}
 
-	if err := db.Close(); err != nil {
+	logrus.Info("Server exiting")
+
+	if err = db.Close(); err != nil {
 		logrus.Errorf("error occured on db connection close: %s", err.Error())
 	}
 }
