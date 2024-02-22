@@ -21,6 +21,10 @@ func main() {
 		logrus.Fatalf("error initializing configs: %s", err.Error())
 	}
 
+	if viper.GetBool("debug") {
+		logrus.SetLevel(logrus.DebugLevel)
+	}
+
 	if err := godotenv.Load(); err != nil {
 		logrus.Fatalf("error loading env variables: %s", err.Error())
 	}
