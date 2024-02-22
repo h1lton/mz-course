@@ -32,7 +32,7 @@ type UpdateListInput struct {
 	Description *string `json:"description"`
 }
 
-func (i UpdateListInput) Validate() error {
+func (i *UpdateListInput) Validate() error {
 	if i.Title == nil && i.Description == nil {
 		return errors.New("update structure has no values")
 	}
